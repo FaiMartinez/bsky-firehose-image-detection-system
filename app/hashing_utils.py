@@ -21,4 +21,4 @@ def compare_hashes(h1, h2, threshold=5):
     # If the average distance is below threshold, it's similar
     elif sum(distances) / len(distances) <= threshold:
         return "similar"
-    return "none"
+    return "different"
