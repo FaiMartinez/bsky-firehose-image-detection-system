@@ -1,0 +1,135 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Bluesky Image Duplicate Checker</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: #f4f6f8;
+            margin: 0;
+            padding: 0;
+            display: flex;
+            justify-content: center;
+            align-items: start;
+            min-height: 100vh;
+        }
+
+        .container {
+            max-width: 600px;
+            margin: 40px auto;
+            background-color: #fff;
+            padding: 30px;
+            border-radius: 12px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+        }
+
+        h1 {
+            text-align: center;
+            color: #333;
+        }
+
+        form {
+            margin-top: 20px;
+            display: flex;
+            flex-direction: column;
+        }
+
+        label {
+            margin-bottom: 10px;
+            font-weight: bold;
+            color: #555;
+        }
+
+        input[type="file"] {
+            margin-bottom: 20px;
+        }
+
+        input[type="submit"] {
+            background-color: #007BFF;
+            color: white;
+            border: none;
+            padding: 12px;
+            font-size: 16px;
+            border-radius: 6px;
+            cursor: pointer;
+            transition: background-color 0.3s ease;
+        }
+
+        input[type="submit"]:hover {
+            background-color: #0056b3;
+        }
+
+        h2 {
+            margin-top: 40px;
+            color: #444;
+        }
+
+        ul {
+            padding-left: 20px;
+        }
+
+        li {
+            margin-bottom: 8px;
+        }
+
+        a {
+            color: #007BFF;
+            text-decoration: none;
+        }
+
+        a:hover {
+            text-decoration: underline;
+        }
+
+        .error {
+            color: #d9534f;
+            font-weight: bold;
+            margin-top: 10px;
+            text-align: center;
+        }
+
+        p {
+            color: #666;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Bluesky Image Duplicate Checker</h1>
+
+        {% if error %}
+            <p class="error">Error: {{ error }}</p>
+        {% endif %}
+
+        <form method="post" enctype="multipart/form-data">
+            <label for="image">Upload an Image:</label>
+            <input type="file" name="image" accept="image/*" required>
+
+            <input type="submit" value="Check Duplicates">
+        </form>
+
+        <h2>Exact Matches</h2>
+        {% if exact_matches %}
+            <ul>
+                {% for match in exact_matches %}
+                    <li><a href="{{ match }}" target="_blank">{{ match }}</a></li>
+                {% endfor %}
+            </ul>
+        {% else %}
+            <p>No exact matches found.</p>
+        {% endif %}
+
+        <h2>Visually Similar Matches</h2>
+        {% if similar_matches %}
+            <ul>
+                {% for match in similar_matches %}
+                    <li><a href="{{ match }}" target="_blank">{{ match }}</a></li>
+                {% endfor %}
+            </ul>
+        {% else %}
+            <p>No visually similar matches found.</p>
+        {% endif %}
+    </div>
+</body>
+</html>
