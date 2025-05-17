@@ -8,16 +8,17 @@ def get_hashes(image):
     }
 
 def compare_hashes(h1, h2, threshold=5):
+    # Calculate Hamming distances for each hash type
     distances = [
-        h1["ahash"] - h2["ahash"],
-        h1["phash"] - h2["phash"],
-        h1["dhash"] - h2["dhash"],
+        abs(h1["ahash"] - h2["ahash"]),
+        abs(h1["phash"] - h2["phash"]),
+        abs(h1["dhash"] - h2["dhash"]),
     ]
-
-    if all(d == 0 for d in distances):
+    
+    # If any distance is 0, it's an exact match
+    if any(d == 0 for d in distances):
         return "exact"
-    elif any(d <= threshold for d in distances):
+    # If the average distance is below threshold, it's similar
+    elif sum(distances) / len(distances) <= threshold:
         return "similar"
     return "none"
-# This module provides functions to compute and compare image hashes.
-# It uses the imagehash library to generate average, perceptual, and difference hashes.
