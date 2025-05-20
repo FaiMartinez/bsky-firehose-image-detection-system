@@ -1,6 +1,6 @@
 import asyncio
 from atproto import CAR, AtUri, models
-from atproto.firehose import FirehoseSubscriber
+from atproto.firehose.firehose import FirehoseSubscriber
 from atproto.xrpc_client import models as xrpc_models
 from PIL import Image
 import requests
