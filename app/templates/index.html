@@ -2,155 +2,121 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>Bluesky Image Duplicate Checker</title>
-    <style>
-        body {
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            background-color: #f4f6f8;
-            margin: 0;
-            padding: 0;
-            display: flex;
-            justify-content: center;
-            align-items: start;
-            min-height: 100vh;
-        }
-
-        .container {
-            max-width: 600px;
-            margin: 40px auto;
-            background-color: #fff;
-            padding: 30px;
-            border-radius: 12px;
-            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
-        }
-
-        h1 {
-            text-align: center;
-            color: #333;
-        }
-
-        form {
-            margin-top: 20px;
-            display: flex;
-            flex-direction: column;
-        }
-
-        label {
-            margin-bottom: 10px;
-            font-weight: bold;
-            color: #555;
-        }
-
-        input[type="file"] {
-            margin-bottom: 20px;
-        }
-
-        input[type="submit"] {
-            background-color: #007BFF;
-            color: white;
-            border: none;
-            padding: 12px;
-            font-size: 16px;
-            border-radius: 6px;
-            cursor: pointer;
-            transition: background-color 0.3s ease;
-        }
-
-        input[type="submit"]:hover {
-            background-color: #0056b3;
-        }
-
-        h2 {
-            margin-top: 40px;
-            color: #444;
-        }
-
-        ul {
-            padding-left: 20px;
-        }
-
-        li {
-            margin-bottom: 8px;
-        }
-
-        a {
-            color: #007BFF;
-            text-decoration: none;
-        }
-
-        a:hover {
-            text-decoration: underline;
-        }
-
-        .error {
-            color: #d9534f;
-            font-weight: bold;
-            margin-top: 10px;
-            text-align: center;
-        }
-
-        .info {
-            color: #666;
-            text-align: center;
-            margin: 20px 0;
-        }
-
-        .results-section {
-            margin-top: 30px;
-            padding: 20px;
-            background-color: #f8f9fa;
-            border-radius: 8px;
-        }
-
-        .no-results {
-            color: #666;
-            font-style: italic;
-            text-align: center;
-            padding: 10px;
-        }
-    </style>
+    <title>Bluesky Image Duplicate Finder</title>
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
 </head>
-<body>
-    <div class="container">
-        <h1>Bluesky Image Duplicate Checker</h1>
-
-        {% if error %}
-            <p class="error">Error: {{ error }}</p>
-        {% endif %}
-
-        <form method="post" enctype="multipart/form-data">
-            <label for="image">Upload an Image:</label>
-            <input type="file" name="image" accept="image/*" required>
-            <input type="submit" value="Check Duplicates">
-        </form>
-
-        {% if request.method == 'POST' %}
-            <div class="results-section">
-                <h2>Exact Matches</h2>
-                {% if exact_matches %}
-                    <ul>
-                        {% for match in exact_matches %}
-                            <li><a href="{{ match }}" target="_blank">{{ match }}</a></li>
-                        {% endfor %}
-                    </ul>
-                {% else %}
-                    <p class="no-results">No exact matches found in your recent posts.</p>
-                {% endif %}
-
-                <h2>Visually Similar Matches</h2>
-                {% if similar_matches %}
-                    <ul>
-                        {% for match in similar_matches %}
-                            <li><a href="{{ match }}" target="_blank">{{ match }}</a></li>
-                        {% endfor %}
-                    </ul>
-                {% else %}
-                    <p class="no-results">No visually similar matches found in your recent posts.</p>
-                {% endif %}
+<body class="bg-gray-100 min-h-screen">
+    <div class="container mx-auto px-4 py-8">
+        <h1 class="text-4xl font-bold text-center mb-8">Bluesky Image Duplicate Finder</h1>
+        
+        <div class="bg-white rounded-lg shadow-lg p-6 mb-8">
+            <div id="stats" class="grid grid-cols-2 gap-4 mb-6">
+                <div class="bg-blue-50 p-4 rounded-lg">
+                    <h3 class="text-lg font-semibold">Total Images Indexed</h3>
+                    <p id="totalImages" class="text-2xl font-bold text-blue-600">Loading...</p>
+                </div>
+                <div class="bg-green-50 p-4 rounded-lg">
+                    <h3 class="text-lg font-semibold">Images Added (Last Hour)</h3>
+                    <p id="recentImages" class="text-2xl font-bold text-green-600">Loading...</p>
+                </div>
             </div>
-        {% else %}
-            <p class="info">Upload an image to check for duplicates in your recent Bluesky posts.</p>
-        {% endif %}
+
+            <form id="uploadForm" class="space-y-4">
+                <div class="border-2 border-dashed border-gray-300 rounded-lg p-6 text-center">
+                    <input type="file" id="imageInput" accept="image/*" class="hidden">
+                    <label for="imageInput" class="cursor-pointer">
+                        <div class="space-y-2">
+                            <svg class="mx-auto h-12 w-12 text-gray-400" stroke="currentColor" fill="none" viewBox="0 0 48 48">
+                                <path d="M28 8H12a4 4 0 00-4 4v20m32-12v8m0 0v8a4 4 0 01-4 4H12a4 4 0 01-4-4v-4m32-4l-3.172-3.172a4 4 0 00-5.656 0L28 28M8 32l9.172-9.172a4 4 0 015.656 0L28 28m0 0l4 4m4-24h8m-4-4v8m-12 4h.02" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
+                            </svg>
+                            <div class="text-sm text-gray-600">
+                                <span class="font-medium text-blue-600 hover:text-blue-500">Upload an image</span>
+                                or drag and drop
+                            </div>
+                        </div>
+                    </label>
+                </div>
+            </form>
+        </div>
+
+        <div id="results" class="hidden space-y-8">
+            <div id="exactMatches" class="bg-white rounded-lg shadow-lg p-6">
+                <h2 class="text-2xl font-bold mb-4">Exact Matches</h2>
+                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4" id="exactMatchesGrid"></div>
+            </div>
+
+            <div id="similarMatches" class="bg-white rounded-lg shadow-lg p-6">
+                <h2 class="text-2xl font-bold mb-4">Similar Matches</h2>
+                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4" id="similarMatchesGrid"></div>
+            </div>
+        </div>
     </div>
+
+    <script>
+        function updateStats() {
+            fetch('/stats')
+                .then(response => response.json())
+                .then(data => {
+                    document.getElementById('totalImages').textContent = data.total_images.toLocaleString();
+                    document.getElementById('recentImages').textContent = data.recent_images.toLocaleString();
+                });
+        }
+
+        function createMatchCard(match) {
+            return `
+                <div class="border rounded-lg overflow-hidden">
+                    <img src="${match.image_url}" alt="Match" class="w-full h-48 object-cover">
+                    <div class="p-4">
+                        <a href="${match.post_url}" target="_blank" class="text-blue-600 hover:text-blue-800">
+                            View Post
+                        </a>
+                        ${match.distance ? `<p class="text-sm text-gray-600">Similarity: ${(100 - match.distance * 2).toFixed(1)}%</p>` : ''}
+                    </div>
+                </div>
+            `;
+        }
+
+        document.getElementById('imageInput').addEventListener('change', async (e) => {
+            const file = e.target.files[0];
+            if (!file) return;
+
+            const formData = new FormData();
+            formData.append('image', file);
+
+            try {
+                const response = await fetch('/', {
+                    method: 'POST',
+                    body: formData
+                });
+
+                const data = await response.json();
+                
+                if (data.error) {
+                    alert(data.error);
+                    return;
+                }
+
+                document.getElementById('results').classList.remove('hidden');
+                
+                const exactMatchesGrid = document.getElementById('exactMatchesGrid');
+                const similarMatchesGrid = document.getElementById('similarMatchesGrid');
+                
+                exactMatchesGrid.innerHTML = data.exact_matches.length ? 
+                    data.exact_matches.map(createMatchCard).join('') :
+                    '<p class="col-span-full text-center text-gray-600">No exact matches found</p>';
+                
+                similarMatchesGrid.innerHTML = data.similar_matches.length ?
+                    data.similar_matches.map(createMatchCard).join('') :
+                    '<p class="col-span-full text-center text-gray-600">No similar matches found</p>';
+            } catch (error) {
+                alert('Error processing image');
+                console.error(error);
+            }
+        });
+
+        // Update stats every 30 seconds
+        updateStats();
+        setInterval(updateStats, 30000);
+    </script>
 </body>
 </html>

@@ -1,56 +1,55 @@
-from flask import Blueprint, render_template, request
+from flask import Blueprint, render_template, request, jsonify
 import os
 from PIL import Image
-from .hashing_utils import get_hashes, compare_hashes
-from .bsky_utils import login_bsky, get_own_image_posts
+from .search_utils import search_similar_images
+import asyncio
+from .firehose import run_firehose
+import threading
 
 main = Blueprint('main', __name__)
 
+def start_firehose():
+    loop = asyncio.new_event_loop()
+    asyncio.set_event_loop(loop)
+    loop.run_until_complete(run_firehose())
+
+@main.before_app_first_request
+def start_firehose_crawler():
+    thread = threading.Thread(target=start_firehose, daemon=True)
+    thread.start()
+
 @main.route("/", methods=["GET", "POST"])
 def index():
-    exact_matches, similar_matches = [], []
-    error = None
-
     if request.method == "POST":
         try:
-            handle = os.getenv("BSKY_HANDLE")
-            password = os.getenv("BSKY_APP_PASSWORD")
             file = request.files.get("image")
+            if not file:
+                return jsonify({"error": "No image file provided"}), 400
 
-            if not handle or not password or not file:
-                error = "Missing handle, password, or image file."
-                return render_template("index.html", error=error)
+            image = Image.open(file.stream).convert("RGB")
+            exact_matches, similar_matches = search_similar_images(image)
 
-            os.makedirs("static/uploads", exist_ok=True)
-            filepath = os.path.join("static/uploads", file.filename)
-            file.save(filepath)
-
-            uploaded_img = Image.open(filepath).convert("RGB")
-            uploaded_hashes = get_hashes(uploaded_img)
-
-            client = login_bsky()
-            posts = get_own_image_posts(client)
-
-            if not posts:
-                error = "No posts with images found in your recent feed."
-
-            for post_url, img in posts:
-                post_hashes = get_hashes(img.convert("RGB"))
-                match_type = compare_hashes(uploaded_hashes, post_hashes)
-
-                if match_type == "exact":
-                    exact_matches.append(post_url)
-                elif match_type == "similar":
-                    similar_matches.append(post_url)
-
-            os.remove(filepath)
+            return jsonify({
+                "exact_matches": exact_matches,
+                "similar_matches": similar_matches
+            })
 
         except Exception as e:
-            error = str(e)
+            return jsonify({"error": str(e)}), 500
 
-    return render_template(
-        "index.html",
-        exact_matches=exact_matches,
-        similar_matches=similar_matches,
-        error=error
-    )
+    return render_template("index.html")
+
+@main.route("/stats")
+def stats():
+    import sqlite3
+    with sqlite3.connect('images.db') as conn:
+        cursor = conn.cursor()
+        total_images = cursor.execute('SELECT COUNT(*) FROM images').fetchone()[0]
+        recent_images = cursor.execute(
+            'SELECT COUNT(*) FROM images WHERE created_at > datetime("now", "-1 hour")'
+        ).fetchone()[0]
+    
+    return jsonify({
+        "total_images": total_images,
+        "recent_images": recent_images
+    })
